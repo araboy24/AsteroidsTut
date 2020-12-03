@@ -1,5 +1,6 @@
 import pygame
 import math
+import random
 
 sw = 800
 sh = 800
@@ -99,25 +100,90 @@ class Bullet(object):
         if self.x < -50 or self.x > sw or self.y > sh or self.y < -50:
             return True
 
+class Asteroid(object):
+    def __init__(self, rank):
+        self.rank = rank
+        if self.rank == 1:
+            self.image = asteroid50
+        elif self.rank == 2:
+            self.image = asteroid100
+        else:
+            self.image = asteroid150
+        self.w = 50 * rank
+        self.h = 50 * rank
+        self.ranPoint = random.choice([(random.randrange(0, sw-self.w), random.choice([-1*self.h - 5, sh + 5])), (random.choice([-1*self.w - 5, sw + 5]), random.randrange(0, sh - self.h))])
+        self.x, self.y = self.ranPoint
+        if self.x < sw//2:
+            self.xdir = 1
+        else:
+            self.xdir = -1
+        if self.y < sh//2:
+            self.ydir = 1
+        else:
+            self.ydir = -1
+        self.xv = self.xdir * random.randrange(1,3)
+        self.yv = self.ydir * random.randrange(1,3)
+
+    def draw(self, win):
+        win.blit(self.image, (self.x, self.y))
+
 def redrawGameWindow():
     win.blit(bg, (0,0))
     player.draw(win)
+    for a in asteroids:
+        a.draw(win)
     for b in playerBullets:
         b.draw(win)
     pygame.display.update()
 
 
+
 player = Player()
 playerBullets = []
+asteroids = []
+count = 0
 run = True
 while run:
     clock.tick(60)
+    count += 1
     if not gameover:
+        if count % 50 == 0:
+            ran = random.choice([1,1,1,2,2,3])
+            asteroids.append(Asteroid(ran))
         player.updateLocation()
         for b in playerBullets:
             b.move()
             if b.checkOffScreen():
                 playerBullets.pop(playerBullets.index(b))
+
+        for a in asteroids:
+            a.x += a.xv
+            a.y += a.yv
+
+            # bullet collision
+            for b in playerBullets:
+                if (b.x >= a.x and b.x <= a.x + a.w) or b.x + b.w >= a.x and b.x + b.w <= a.x + a.w:
+                    if (b.y >= a.y and b.y <= a.y + a.h) or b.y + b.h >= a.y and b.y + b.h <= a.y + a.h:
+                        if a.rank == 3:
+                            na1 = Asteroid(2)
+                            na2 = Asteroid(2)
+                            na1.x = a.x
+                            na2.x = a.x
+                            na1.y = a.y
+                            na2.y = a.y
+                            asteroids.append(na1)
+                            asteroids.append(na2)
+                        elif a.rank == 2:
+                            na1 = Asteroid(1)
+                            na2 = Asteroid(1)
+                            na1.x = a.x
+                            na2.x = a.x
+                            na1.y = a.y
+                            na2.y = a.y
+                            asteroids.append(na1)
+                            asteroids.append(na2)
+                        asteroids.pop(asteroids.index(a))
+                        playerBullets.pop(playerBullets.index(b))
 
 
         keys = pygame.key.get_pressed()
